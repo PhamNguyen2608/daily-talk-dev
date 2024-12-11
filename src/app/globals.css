@@ -24,3 +24,21 @@ body {
     color: var(--foreground-dark);
   }
 }
+
+/* Ẩn thanh scrollbar nhưng vẫn giữ chức năng cuộn */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 0px;  /* Chiều rộng của scrollbar */
+  background: transparent;  /* Làm trong suốt background */
+}
+
+/* Tùy chọn: Nếu muốn hiển thị scrollbar khi hover */
+.overflow-y-auto:hover::-webkit-scrollbar {
+  width: 5px;  /* Hiển thị scrollbar mỏng khi hover */
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);  /* M��u của thumb */
+  border-radius: 20px;
+}
+
+
