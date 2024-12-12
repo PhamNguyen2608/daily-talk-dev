@@ -7,7 +7,7 @@ import ContentCard from "../ui/ContentCard";
 import RightColumn from "../right/RightColumn";
 
 const Main: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
@@ -15,7 +15,7 @@ const Main: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <MainNavBar />
+      <MainNavBar onMobileMenuToggle={toggleSidebar} />
 
       <LeftColumn isOpen={isSidebarOpen} onClose={toggleSidebar}>
         {Array.from({ length: 8 }).map((_, index) => (

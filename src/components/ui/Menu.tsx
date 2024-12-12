@@ -1,5 +1,5 @@
 "use client";
-import React, { FC, useState, useRef } from "react";
+import React, { FC, useState, useRef, useEffect } from "react";
 import Portal from "./Portal";
 import MenuItem from "./MenuItem";
 import useMenuPosition from "@/hooks/useMenuPosition";
@@ -24,6 +24,7 @@ import DynamicPortal from "./DynamicPortal";
 type MenuProps = {
   isOpen: boolean;
   onClose: () => void;
+  isExpanded: boolean;
   noCompact?: boolean;
   withPortal?: boolean;
   bubbleClassName?: string;
@@ -38,20 +39,28 @@ interface MenuGroupProps {
 const Menu: FC<MenuProps> = ({
   isOpen,
   onClose,
+  isExpanded,
   withPortal = false,
-  noCompact,
   bubbleClassName,
   ...positionOptions
 }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
   const [activeItem, setActiveItem] = useState<string>("home");
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
 
-  // Apply positioning using the custom hook
-  useMenuPosition(isOpen, containerRef, bubbleRef, positionOptions );
+  useMenuPosition(isOpen, containerRef, bubbleRef, positionOptions);
 
   const menuItems = {
     main: [
@@ -72,8 +81,6 @@ const Menu: FC<MenuProps> = ({
     ],
   };
 
-  const toggleSidebar = () => setIsExpanded(!isExpanded);
-
   const toggleGroup = (group: string) => {
     setExpandedGroups((prev) =>
       prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]
@@ -85,15 +92,19 @@ const Menu: FC<MenuProps> = ({
 
     return (
       <div className="mb-4">
-        {isExpanded && (
-          <div
-            className="flex items-center justify-between px-4 py-2 text-gray-400 cursor-pointer hover:text-gray-200"
-            onClick={() => toggleGroup(groupKey)}
-          >
-            <span className="text-sm font-semibold uppercase">{title}</span>
-            {isGroupExpanded ? <IoMdArrowDropup /> : <IoMdArrowDropdown />}
-          </div>
-        )}
+        <div
+          className="flex items-center justify-between px-4 py-2 text-gray-400 cursor-pointer hover:text-gray-200"
+          onClick={() => toggleGroup(groupKey)}
+        >
+          {isExpanded ? (
+            <>
+              <span className="text-sm font-semibold uppercase">{title}</span>
+              {isGroupExpanded ? <IoMdArrowDropup /> : <IoMdArrowDropdown />}
+            </>
+          ) : (
+            <div className="w-full border-t border-gray-700"></div>
+          )}
+        </div>
         <div className={`${!isGroupExpanded && isExpanded ? "hidden" : "block"}`}>
           {items.map((item) => (
             <MenuItem
@@ -113,86 +124,63 @@ const Menu: FC<MenuProps> = ({
   const menuContent = (
     <div
       ref={containerRef}
-      className={`h-screen bg-gray-800 transition-all duration-300 ${
-        isExpanded ? "w-64" : "w-20"
-      } relative ${noCompact ? "" : "compact-mode"}`}
+      className={`w-full h-full flex flex-col bg-gray-800 transform transition-all duration-300 ${
+        isOpen
+          ? "translate-x-0"
+          : windowWidth >= 1024
+          ? "translate-x-0"
+          : "-translate-x-full"
+      }`}
     >
-      <button
-        className="absolute -right-3 top-10 bg-indigo-600 text-white p-1 rounded-full shadow-lg"
-        onClick={toggleSidebar}
-        aria-label="Toggle Sidebar"
-      >
-        {isExpanded ? <FiChevronLeft /> : <FiChevronRight />}
-      </button>
-
-      <div className="flex flex-col h-full">
-        <div className="p-4 border-b border-gray-700">
-          <div className="flex items-center">
-            <div className="relative">
-              <img
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                alt="User avatar"
-                className="w-10 h-10 rounded-full"
-              />
+      <div className="p-4 border-b border-gray-700">
+        <div className="flex items-center space-x-3">
+          <img
+            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"
+            alt="User avatar"
+            className="w-10 h-10 rounded-full"
+          />
+          {isExpanded && (
+            <div>
+              <p className="text-white font-medium">John Doe</p>
+              <p className="text-gray-400 text-sm">Admin</p>
             </div>
-            {isExpanded && (
-              <div className="ml-3">
-                <p className="text-white font-medium">John Doe</p>
-                <p className="text-gray-400 text-sm">Admin</p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
+      </div>
 
-        <div className="flex-1 overflow-y-auto py-4">
-          <MenuGroup title="Main" items={menuItems.main} groupKey="main" />
-          <MenuGroup title="Network" items={menuItems.network} groupKey="network" />
-          <MenuGroup title="Feeds" items={menuItems.feeds} groupKey="feeds" />
-          <MenuGroup title="Discover" items={menuItems.discover} groupKey="discover" />
-        </div>
+      <div className="flex-1 overflow-y-auto">
+        {Object.entries(menuItems).map(([key, items]) => (
+          <MenuGroup
+            key={key}
+            title={key.charAt(0).toUpperCase() + key.slice(1)}
+            items={items}
+            groupKey={key}
+          />
+        ))}
+      </div>
 
-        <div className="border-t border-gray-700 p-4">
-          <MenuItem
-            label="Settings"
-            icon={FiSettings}
-            isActive={false}
-            onClick={() => console.log("Settings clicked")}
-            destructive={false}
-            ariaLabel="Settings"
-            className="custom-class"
-            isExpanded={isExpanded}
-          />
-          <MenuItem
-            label="Logout"
-            icon={FiLogOut}
-            isActive={false}
-            onClick={() => console.log("Logout clicked")}
-            destructive={true}
-            ariaLabel="Logout"
-            isExpanded={isExpanded}
-          />
-        </div>
+      <div className="border-t border-gray-700 p-4 mt-auto">
+        <MenuItem
+          label="Settings"
+          icon={FiSettings}
+          isActive={false}
+          onClick={() => console.log("Settings clicked")}
+          isExpanded={isExpanded}
+        />
+        <MenuItem
+          label="Logout"
+          icon={FiLogOut}
+          isActive={false}
+          onClick={() => console.log("Logout clicked")}
+          isExpanded={isExpanded}
+          destructive={true}
+        />
       </div>
     </div>
   );
 
-  // Render logic with Portal support
-  if (!isOpen) return null;
-
-  const content = (
-    <div
-      ref={bubbleRef}
-      className={`fixed inset-0 z-50 ${bubbleClassName}`}
-    >
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative">
-        {menuContent}
-      </div>
-    </div>
-  );
-
-  // Return with or without Portal based on withPortal prop
-  return withPortal ? <DynamicPortal>{content}</DynamicPortal> : content;
+  if (!isOpen && windowWidth < 1024) return null;
+  return menuContent;
 };
 
 export default Menu;

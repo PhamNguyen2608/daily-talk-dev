@@ -1,6 +1,7 @@
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import LeftMain from "../main/LeftMain";
+import Menu from "../ui/Menu";
 
 interface LeftColumnProps {
   isOpen: boolean;
@@ -9,25 +10,35 @@ interface LeftColumnProps {
 }
 
 const LeftColumn: React.FC<LeftColumnProps> = ({ isOpen, onClose, children }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
-
+  const [isExpanded, setIsExpanded] = useState<boolean>(window.innerWidth >= 1024);
   const toggleSidebar = () => setIsExpanded(!isExpanded);
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsExpanded(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <>
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-30 md:hidden" 
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden" 
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
       
       <div className="flex">
         <aside
-          className={`fixed top-16 bottom-0 bg-white shadow-lg transition-all duration-300 ease-in-out ${
+          className={`fixed top-16 bottom-0 bg-gray-800 shadow-lg transition-all duration-300 ease-in-out ${
             isExpanded ? "w-72" : "w-20"
           } ${
-            isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+            isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           } z-40`}
         >
           <button
@@ -38,35 +49,24 @@ const LeftColumn: React.FC<LeftColumnProps> = ({ isOpen, onClose, children }) =>
             {isExpanded ? <FiChevronLeft /> : <FiChevronRight />}
           </button>
 
-          <div className="flex flex-col h-full">
-            <div className="p-4 border-b">
-              <div className="flex items-center">
-                <div className="relative">
-                  <img
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                    alt="User avatar"
-                    className="w-10 h-10 rounded-full"
-                  />
-                </div>
-                {isExpanded && (
-                  <div className="ml-3">
-                    <p className="font-medium">John Doe</p>
-                    <p className="text-gray-500 text-sm">Admin</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <LeftMain isSidebarOpen={isExpanded}>
-              {children}
-            </LeftMain>
+          <div className="h-full">
+            <LeftMain 
+              isSidebarOpen={isExpanded}
+              navigation={
+                <Menu 
+                  isOpen={isOpen}
+                  onClose={onClose}
+                  isExpanded={isExpanded}
+                />
+              }
+            />
           </div>
         </aside>
 
         <main
           className={`flex-1 pt-20 px-4 transition-all duration-300 ${
             isExpanded ? "md:ml-72" : "md:ml-20"
-          }`}
+          }`} 
         >
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
             {children}
