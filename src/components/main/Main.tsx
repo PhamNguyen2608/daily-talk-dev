@@ -1,34 +1,33 @@
 "use client";
-import { useState } from "react";
-import Menu from "@/components/ui/Menu";
-import Transition from "@/components/ui/Transition";
-import { FiMenu, FiX } from "react-icons/fi";
-const Main = () => {
-    const [isExpanded, setIsExpanded] = useState(true);
-  
-    const toggleMenu = () => {
-      setIsExpanded(!isExpanded);
-      setActiveKey(activeKey === 0 ? 1 : 0);
-    };
-    const [isMenuOpen, setIsMenuOpen] = useState(true);
-    const [activeKey, setActiveKey] = useState(0);
-    const handleMenuToggle = () => {
-        setIsMenuOpen((prev) => !prev);
-    };
 
-    const handleMenuClose = () => {
-        setIsMenuOpen(false);
-    };
-    return <div> <Menu
-        isOpen={isMenuOpen}
-        onClose={handleMenuClose}
-        positionX="right" // hoặc "left"
-        positionY="top"   // hoặc "bottom"
-        bubbleClassName="bg-white shadow-lg p-4 rounded"
-        noCompact={true}
-        withPortal={true}
-    />
-    </div>;
+import React, { useState, useCallback } from "react";
+import MainNavBar from "../main/MainNavBar";
+import LeftColumn from "../left/LeftColumn";
+import ContentCard from "../ui/ContentCard";
+import RightColumn from "../right/RightColumn";
+
+const Main: React.FC = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen((prev) => !prev);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <MainNavBar />
+
+      <LeftColumn isOpen={isSidebarOpen} onClose={toggleSidebar}>
+        {Array.from({ length: 8 }).map((_, index) => (
+          <ContentCard key={index} />
+        ))}
+      </LeftColumn>
+
+      <div className="fixed top-20 right-4 w-80 transition-all duration-300 hidden xl:block">
+        <RightColumn />
+      </div>
+    </div>
+  );
 };
 
 export default Main;

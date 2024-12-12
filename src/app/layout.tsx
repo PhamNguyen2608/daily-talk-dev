@@ -49,7 +49,6 @@ export default function RootLayout({
       <body className={bodyClasses}>
         {children}
         <div id="portals"></div>
-
         <noscript>
           <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white text-center">
             <video
