@@ -1,10 +1,14 @@
 /** @type {import('postcss-load-config').Config} */
 const config = {
   plugins: {
-    "postcss-import": {}, // Hỗ trợ import file
-    "tailwindcss/nesting": "postcss-nesting",
+    'postcss-import': {},
+    'postcss-mixins': {},
+    'postcss-simple-vars': {},
+    'postcss-nested': {},
+    'tailwindcss/nesting': {},
     tailwindcss: {},
-    autoprefixer: {}, // Tự động thêm vendor prefix
+    autoprefixer: {},
+    ...(process.env.NODE_ENV === 'production' ? { cssnano: {} } : {})
   },
 };
 

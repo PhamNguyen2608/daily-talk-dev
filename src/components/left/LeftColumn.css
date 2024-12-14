@@ -1,0 +1,89 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities"; 
+
+:root {
+  --sidebar-width-expanded: 18rem;  /* w-72 */
+  --sidebar-width-collapsed: 5rem;  /* w-20 */
+  --sidebar-bg: theme('colors.app.bg');
+  --sidebar-hover: theme('colors.app.bgSecondary');
+  --sidebar-border: theme('colors.app.border');
+  --accent-color: theme('colors.app.accent');
+  --accent-hover: theme('colors.app.hover');
+  --text-primary: theme('colors.app.text');
+  --text-secondary: theme('colors.app.textSecondary');
+}
+
+@layer components {
+  .sidebar {
+    &-base {
+      @apply fixed top-16 bottom-0 shadow-lg;
+      background-color: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      transition: all 300ms ease-in-out;
+    }
+
+    &-expanded {
+      width: var(--sidebar-width-expanded);
+    }
+
+    &-collapsed {
+      width: var(--sidebar-width-collapsed);
+    }
+
+    &-mobile {
+      @apply translate-x-0;
+    }
+
+    &-mobile-closed {
+      @apply -translate-x-full lg:translate-x-0;
+    }
+
+    &-overlay {
+      @apply fixed inset-0 bg-black/50 z-30 lg:hidden;
+    }
+
+    &-toggle {
+      @apply absolute -right-3 top-10 p-1.5 rounded-full shadow-lg z-50;
+      background-color: var(--accent-color);
+      color: var(--text-primary);
+
+      &:hover {
+        background-color: var(--accent-hover);
+      }
+    }
+
+    &-content {
+      @apply h-full;
+      background-color: var(--sidebar-bg);
+
+      &:hover {
+        background-color: var(--sidebar-hover);
+      }
+    }
+  }
+
+  .main {
+    &-content {
+      @apply flex-1 pt-20 px-4;
+      transition: margin 300ms ease-in-out;
+      color: var(--text-primary);
+
+      &-expanded {
+        @apply md:ml-72;
+      }
+
+      &-collapsed {
+        @apply md:ml-20;
+      }
+
+      &-mobile {
+        @apply md:ml-0;
+      }
+    }
+
+    &-grid {
+      @apply max-w-7xl mx-auto ;
+    }
+  }
+}

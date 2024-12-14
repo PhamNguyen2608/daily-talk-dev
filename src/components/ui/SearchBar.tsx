@@ -4,7 +4,7 @@ import { FiSearch } from "react-icons/fi";
 const SearchBar: React.FC = () => {
   return (
     <div className="relative">
-      <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+      <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-app-textSecondary" />
       <input
         type="text"
         placeholder="Search..."

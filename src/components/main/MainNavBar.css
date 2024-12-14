@@ -1,0 +1,73 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+
+:root {
+  --navbar-height: 4rem;
+  --navbar-bg: theme('colors.sidebar.bg');
+  --navbar-border: theme('colors.sidebar.border');
+  --search-bg: theme('colors.app.bgSecondary');
+  --text-primary: theme('colors.app.text');
+  --text-secondary: theme('colors.app.textSecondary');
+  --accent-color: theme('colors.app.accent');
+  --accent-hover: theme('colors.app.hover');
+}
+
+@layer components {
+  .navbar {
+    &-base {
+      @apply fixed top-0 left-0 right-0 h-16 bg-sidebar-bg border-b border-gray-700 z-40;
+    }
+
+    &-container {
+      @apply h-full px-4 flex items-center justify-between;
+    }
+
+    &-menu-btn {
+      @apply lg:hidden p-2 hover:bg-gray-700 rounded-lg;
+
+      & svg {
+        @apply w-6 h-6 text-gray-200;
+      }
+    }
+
+    &-search {
+      @apply flex-1 max-w-2xl mx-4;
+
+      &-wrapper {
+        @apply relative;
+      }
+
+      &-icon {
+        @apply absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400;
+      }
+
+      &-input {
+        @apply w-full bg-gray-700 text-gray-200 rounded-lg pl-10 pr-4 py-2;
+
+        &:focus {
+          @apply outline-none ring-2 ring-purple-500;
+        }
+      }
+    }
+
+    &-actions {
+      @apply flex items-center space-x-2;
+
+      &-btn {
+        @apply p-2 hover:bg-gray-700 rounded-lg;
+
+        & svg {
+          @apply w-5 h-5 text-gray-200;
+        }
+      }
+
+      &-new-post {
+        @apply hidden md:flex items-center space-x-2 bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded-lg text-white;
+
+        & svg {
+          @apply w-4 h-4;
+        }
+      }
+    }
+  }
+} 

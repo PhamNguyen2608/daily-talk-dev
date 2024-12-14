@@ -1,7 +1,9 @@
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useState } from "react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import LeftMain from "../main/LeftMain";
 import Menu from "../ui/Menu";
+import useScreenSize from "@/hooks/useScreenSize";
+import './LeftColumn.css';
 
 interface LeftColumnProps {
   isOpen: boolean;
@@ -9,25 +11,25 @@ interface LeftColumnProps {
   children: React.ReactNode;
 }
 
-const LeftColumn: React.FC<LeftColumnProps> = ({ isOpen, onClose, children }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(window.innerWidth >= 1024);
-  const toggleSidebar = () => setIsExpanded(!isExpanded);
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setIsExpanded(true);
-      }
-    };
+const LeftColumn: React.FC<LeftColumnProps> = ({ 
+  isOpen, 
+  onClose, 
+  children 
+}) => {
+  const isLargeScreen = useScreenSize({
+    breakpoint: 'lg',
+    customBreakpoints: {
+      lg: 1024
+    }
+  });
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const [isExpanded, setIsExpanded] = useState<boolean>(isLargeScreen);
 
   return (
     <>
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden" 
+          className="sidebar-overlay"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -35,28 +37,36 @@ const LeftColumn: React.FC<LeftColumnProps> = ({ isOpen, onClose, children }) =>
       
       <div className="flex">
         <aside
-          className={`fixed top-16 bottom-0 bg-gray-800 shadow-lg transition-all duration-300 ease-in-out ${
-            isExpanded ? "w-72" : "w-20"
+          className={`sidebar-base ${
+            isLargeScreen 
+              ? (isExpanded ? "sidebar-expanded" : "sidebar-collapsed")
+              : "sidebar-expanded"
           } ${
-            isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+            isOpen ? "sidebar-mobile" : "sidebar-mobile-closed"
           } z-40`}
         >
-          <button
-            className="absolute -right-3 top-10 bg-indigo-600 text-white p-1 rounded-full shadow-lg"
-            onClick={toggleSidebar}
-            aria-label="Toggle Sidebar"
-          >
-            {isExpanded ? <FiChevronLeft /> : <FiChevronRight />}
-          </button>
+          {isLargeScreen && (
+            <button
+              className="sidebar-toggle"
+              onClick={() => setIsExpanded(!isExpanded)}
+              aria-label="Toggle Sidebar"
+            >
+              {isExpanded ? (
+                <FiChevronLeft size={20} className="text-white" />
+              ) : (
+                <FiChevronRight size={20} className="text-white" />
+              )}
+            </button>
+          )}
 
           <div className="h-full">
             <LeftMain 
-              isSidebarOpen={isExpanded}
+              isSidebarOpen={isLargeScreen ? isExpanded : true}
               navigation={
                 <Menu 
                   isOpen={isOpen}
                   onClose={onClose}
-                  isExpanded={isExpanded}
+                  isExpanded={isLargeScreen ? isExpanded : true}
                 />
               }
             />
@@ -64,11 +74,13 @@ const LeftColumn: React.FC<LeftColumnProps> = ({ isOpen, onClose, children }) =>
         </aside>
 
         <main
-          className={`flex-1 pt-20 px-4 transition-all duration-300 ${
-            isExpanded ? "md:ml-72" : "md:ml-20"
-          }`} 
+          className={`main-content ${
+            isLargeScreen 
+              ? (isExpanded ? "main-content-expanded" : "main-content-collapsed")
+              : "main-content-mobile"
+          }`}
         >
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
+          <div className="main-grid">
             {children}
           </div>
         </main>

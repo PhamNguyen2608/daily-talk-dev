@@ -1,12 +1,9 @@
 "use client";
 import React, { FC, useState, useRef, useEffect } from "react";
-import Portal from "./Portal";
 import MenuItem from "./MenuItem";
 import useMenuPosition from "@/hooks/useMenuPosition";
 import type { MenuPositionOptions } from '@/hooks/useMenuPosition';
 import {
-  FiChevronLeft,
-  FiChevronRight,
   FiHome,
   FiUser,
   FiGlobe,
@@ -18,8 +15,7 @@ import {
   FiSettings,
   FiLogOut,
 } from "react-icons/fi";
-import { IoMdArrowDropdown, IoMdArrowDropup } from "react-icons/io";
-import DynamicPortal from "./DynamicPortal";
+import MenuGroup from "./MenuGroup";
 
 type MenuProps = {
   isOpen: boolean;
@@ -29,12 +25,6 @@ type MenuProps = {
   withPortal?: boolean;
   bubbleClassName?: string;
 } & MenuPositionOptions;
-
-interface MenuGroupProps {
-  title: string;
-  items: { id: string; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }[];
-  groupKey: string;
-}
 
 const Menu: FC<MenuProps> = ({
   isOpen,
@@ -87,44 +77,10 @@ const Menu: FC<MenuProps> = ({
     );
   };
 
-  const MenuGroup: FC<MenuGroupProps> = ({ title, items, groupKey }) => {
-    const isGroupExpanded = expandedGroups.includes(groupKey);
-
-    return (
-      <div className="mb-4">
-        <div
-          className="flex items-center justify-between px-4 py-2 text-gray-400 cursor-pointer hover:text-gray-200"
-          onClick={() => toggleGroup(groupKey)}
-        >
-          {isExpanded ? (
-            <>
-              <span className="text-sm font-semibold uppercase">{title}</span>
-              {isGroupExpanded ? <IoMdArrowDropup /> : <IoMdArrowDropdown />}
-            </>
-          ) : (
-            <div className="w-full border-t border-gray-700"></div>
-          )}
-        </div>
-        <div className={`${!isGroupExpanded && isExpanded ? "hidden" : "block"}`}>
-          {items.map((item) => (
-            <MenuItem
-              key={item.id}
-              label={item.label}
-              icon={item.icon}
-              isActive={activeItem === item.id}
-              onClick={() => setActiveItem(item.id)}
-              isExpanded={isExpanded}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   const menuContent = (
     <div
       ref={containerRef}
-      className={`w-full h-full flex flex-col bg-gray-800 transform transition-all duration-300 ${
+      className={`w-full h-full flex flex-col bg-sidebar-bg transform transition-all duration-300 ${
         isOpen
           ? "translate-x-0"
           : windowWidth >= 1024
@@ -155,6 +111,11 @@ const Menu: FC<MenuProps> = ({
             title={key.charAt(0).toUpperCase() + key.slice(1)}
             items={items}
             groupKey={key}
+            isExpanded={isExpanded}
+            expandedGroups={expandedGroups}
+            toggleGroup={toggleGroup}
+            activeItem={activeItem}
+            setActiveItem={setActiveItem}
           />
         ))}
       </div>

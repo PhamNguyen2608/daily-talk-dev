@@ -29,7 +29,7 @@ const MenuItem: FC<MenuItemProps> = ({
     <div
       className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-all ${
         isActive
-          ? "bg-gray-700 border-l-4 border-purple-500 rounded-lg" 
+          ? "bg-gray-700 border-l-4 border-sidebar-border rounded-lg" 
           : "hover:bg-gray-700"
       } ${destructive ? "text-red-600 hover:text-red-400" : "text-gray-400 hover:text-gray-200"}`}
       onClick={onClick}
