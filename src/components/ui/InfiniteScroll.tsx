@@ -1,111 +1,294 @@
-import React, { 
-  useEffect, 
-  useMemo, 
-  useRef, 
-  UIEvent 
+import type { RefObject, UIEvent } from 'react';
+import type { FC } from 'react';
+import React, {
+  useEffect, useLayoutEffect, useMemo, useRef,
 } from 'react';
-import { debounce } from '../../utils/schedulers';
-import { LoadMoreDirection } from '@/types';
+
+import { LoadMoreDirection } from '../../types';
 
 
-interface InfiniteScrollProps {
+import useLastCallback from '../../hooks/useLastCallback';
+import { debounce } from '@/utils/schedulers';
+
+type OwnProps = {
+  ref?: RefObject<HTMLDivElement>;
+  style?: string;
   className?: string;
   items?: any[];
   itemSelector?: string;
   preloadBackwards?: number;
   sensitiveArea?: number;
+  withAbsolutePositioning?: boolean;
   maxHeight?: number;
   noScrollRestore?: boolean;
+  noScrollRestoreOnTop?: boolean;
   noFastList?: boolean;
+  cacheBuster?: any;
   beforeChildren?: React.ReactNode;
+  scrollContainerClosest?: string;
   children: React.ReactNode;
   onLoadMore?: ({ direction }: { direction: LoadMoreDirection; noScroll?: boolean }) => void;
   onScroll?: (e: UIEvent<HTMLDivElement>) => void;
-}
+  onWheel?: (e: React.WheelEvent<HTMLDivElement>) => void;
+  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<any>) => void;
+  onDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave?: (e: React.DragEvent<HTMLDivElement>) => void;
+};
 
+const DEFAULT_LIST_SELECTOR = '.ListItem';
 const DEFAULT_PRELOAD_BACKWARDS = 20;
 const DEFAULT_SENSITIVE_AREA = 800;
 
-const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
+const InfiniteScroll: FC<OwnProps> = ({
+  ref,
+  style,
   className,
   items,
+  itemSelector = DEFAULT_LIST_SELECTOR,
   preloadBackwards = DEFAULT_PRELOAD_BACKWARDS,
   sensitiveArea = DEFAULT_SENSITIVE_AREA,
+  withAbsolutePositioning,
   maxHeight,
-  noFastList = false,
+  // Used to turn off restoring scroll position (e.g. for frequently re-ordered chat or user lists)
+  noScrollRestore = false,
+  noScrollRestoreOnTop = false,
+  noFastList,
+  // Used to re-query `listItemElements` if rendering is delayed by transition
+  cacheBuster,
   beforeChildren,
   children,
+  scrollContainerClosest,
   onLoadMore,
   onScroll,
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  onWheel,
+  onClick,
+  onKeyDown,
+  onDragOver,
+  onDragLeave,
+}: OwnProps) => {
+  // eslint-disable-next-line no-null/no-null
+  let containerRef = useRef<HTMLDivElement>(null);
+  if (ref) {
+    containerRef = ref;
+  }
+
+  const stateRef = useRef<{
+    listItemElements?: NodeListOf<HTMLDivElement>;
+    isScrollTopJustUpdated?: boolean;
+    currentAnchor?: HTMLDivElement | undefined;
+    currentAnchorTop?: number;
+  }>({});
 
   const [loadMoreBackwards, loadMoreForwards] = useMemo(() => {
-    if (!onLoadMore) return [];
+    if (!onLoadMore) {
+      return [];
+    }
 
     return [
       debounce((noScroll = false) => {
         onLoadMore({ direction: LoadMoreDirection.Backwards, noScroll });
-      }, 1000),
+      }, 1000, true, false),
       debounce(() => {
         onLoadMore({ direction: LoadMoreDirection.Forwards });
-      }, 1000),
+      }, 1000, true, false),
     ];
-  }, [onLoadMore]);
+    // eslint-disable-next-line react-hooks-static-deps/exhaustive-deps
+  }, [onLoadMore, items]);
 
-  // Initial load
+  // Initial preload
   useEffect(() => {
-    if (!loadMoreBackwards || !containerRef.current) return;
+    const scrollContainer = scrollContainerClosest
+      ? containerRef.current!.closest<HTMLDivElement>(scrollContainerClosest)!
+      : containerRef.current!;
+    if (!loadMoreBackwards || !scrollContainer) {
+      return;
+    }
 
     if (preloadBackwards > 0 && (!items || items.length < preloadBackwards)) {
       loadMoreBackwards(true);
       return;
     }
 
-    const { scrollHeight, clientHeight } = containerRef.current;
+    const { scrollHeight, clientHeight } = scrollContainer;
     if (clientHeight && scrollHeight < clientHeight) {
       loadMoreBackwards();
     }
-  }, [items, loadMoreBackwards, preloadBackwards]);
+  }, [items, loadMoreBackwards, preloadBackwards, scrollContainerClosest]);
 
-  const handleScroll = (e: UIEvent<HTMLDivElement>) => {
-    if (!loadMoreBackwards || !loadMoreForwards) return;
+  useEffect(() => {
+    const container = containerRef.current!;
+    const listItemElements = container.querySelectorAll<HTMLDivElement>(itemSelector);
+    console.log("currentAnchor:", stateRef.current.currentAnchor);
+    console.log("currentAnchorTop:", stateRef.current.currentAnchorTop);
+    console.log("listItemElements:", stateRef.current.listItemElements);
 
-    const container = containerRef.current;
-    if (!container) return;
+    stateRef.current.listItemElements = listItemElements;
+  }, [items, itemSelector]);
+  
+  // Restore `scrollTop` after adding items
+  // useLayoutEffect(() => {
+  //   const scrollContainer = scrollContainerClosest
+  //     ? containerRef.current!.closest<HTMLDivElement>(scrollContainerClosest)!
+  //     : containerRef.current!;
 
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    const isNearTop = scrollTop <= sensitiveArea;
-    const isNearBottom = scrollHeight - (scrollTop + clientHeight) <= sensitiveArea;
+  //   const container = containerRef.current!;
 
-    if (isNearTop) loadMoreForwards();
-    if (isNearBottom) loadMoreBackwards();
+  //   requestForcedReflow(() => {
+  //     const state = stateRef.current;
 
-    onScroll?.(e);
-  };
+  //     state.listItemElements = container.querySelectorAll<HTMLDivElement>(itemSelector);
+
+  //     let newScrollTop: number;
+
+  //     if (state.currentAnchor && Array.from(state.listItemElements).includes(state.currentAnchor)) {
+  //       const { scrollTop } = scrollContainer;
+  //       const newAnchorTop = state.currentAnchor!.getBoundingClientRect().top;
+  //       newScrollTop = scrollTop + (newAnchorTop - state.currentAnchorTop!);
+  //     } else {
+  //       const nextAnchor = state.listItemElements[0];
+  //       if (nextAnchor) {
+  //         state.currentAnchor = nextAnchor;
+  //         state.currentAnchorTop = nextAnchor.getBoundingClientRect().top;
+  //       }
+  //     }
+
+  //     if (withAbsolutePositioning || noScrollRestore) {
+  //       return undefined;
+  //     }
+
+  //     const { scrollTop } = scrollContainer;
+  //     if (noScrollRestoreOnTop && scrollTop === 0) {
+  //       return undefined;
+  //     }
+
+  //     return () => {
+  //       resetScroll(scrollContainer, newScrollTop);
+
+  //       state.isScrollTopJustUpdated = true;
+  //     };
+  //   });
+  // }, [
+  //   items, itemSelector, noScrollRestore, noScrollRestoreOnTop, cacheBuster, withAbsolutePositioning,
+  //   scrollContainerClosest,
+  // ]);
+
+  const handleScroll = useLastCallback((e: UIEvent<HTMLDivElement>) => {
+
+    if (loadMoreForwards && loadMoreBackwards) {
+      const {
+        isScrollTopJustUpdated, currentAnchor, currentAnchorTop,
+      } = stateRef.current;
+      const listItemElements = stateRef.current.listItemElements!;
+      console.log('Scroll event triggered');
+
+      console.log('listItemElements', listItemElements)
+      if (isScrollTopJustUpdated) {
+        stateRef.current.isScrollTopJustUpdated = false;
+        return;
+      }
+
+      const listLength = listItemElements.length;
+      const scrollContainer = scrollContainerClosest
+        ? containerRef.current!.closest<HTMLDivElement>(scrollContainerClosest)!
+        : containerRef.current!;
+      const { scrollTop, scrollHeight, offsetHeight } = scrollContainer;
+      const top = listLength ? listItemElements[0].offsetTop : 0;
+      const isNearTop = scrollTop <= top + sensitiveArea;
+      const bottom = listLength
+        ? listItemElements[listLength - 1].offsetTop + listItemElements[listLength - 1].offsetHeight
+        : scrollHeight;
+      const isNearBottom = bottom - (scrollTop + offsetHeight) <= sensitiveArea;
+      let isUpdated = false;
+
+      if (isNearTop) {
+        const nextAnchor = listItemElements[0];
+        console.log('nextAnchor', nextAnchor)
+        if (nextAnchor) {
+          const nextAnchorTop = nextAnchor.getBoundingClientRect().top;
+          const newAnchorTop = currentAnchor?.offsetParent && currentAnchor !== nextAnchor
+            ? currentAnchor.getBoundingClientRect().top
+            : nextAnchorTop;
+          const isMovingUp = (
+            currentAnchor && currentAnchorTop !== undefined && newAnchorTop > currentAnchorTop
+          );
+
+          if (isMovingUp) {
+            stateRef.current.currentAnchor = nextAnchor;
+            stateRef.current.currentAnchorTop = nextAnchorTop;
+            isUpdated = true;
+            console.log('isMovingUp');
+            loadMoreForwards();
+          }
+        }
+      }
+
+      if (isNearBottom) {
+        const nextAnchor = listItemElements[listLength - 1];
+        if (nextAnchor) {
+          const nextAnchorTop = nextAnchor.getBoundingClientRect().top;
+          const newAnchorTop = currentAnchor?.offsetParent && currentAnchor !== nextAnchor
+            ? currentAnchor.getBoundingClientRect().top
+            : nextAnchorTop;
+          const isMovingDown = (
+            currentAnchor && currentAnchorTop !== undefined && newAnchorTop < currentAnchorTop
+          );
+
+          if (isMovingDown) {
+            stateRef.current.currentAnchor = nextAnchor;
+            stateRef.current.currentAnchorTop = nextAnchorTop;
+            isUpdated = true;
+            console.log('isMovingDown');
+            loadMoreBackwards();
+          }
+        }
+      }
+
+      if (!isUpdated) {
+        if (currentAnchor?.offsetParent) {
+          stateRef.current.currentAnchorTop = currentAnchor.getBoundingClientRect().top;
+        } else {
+          const nextAnchor = listItemElements[0];
+
+          if (nextAnchor) {
+            stateRef.current.currentAnchor = nextAnchor;
+            stateRef.current.currentAnchorTop = nextAnchor.getBoundingClientRect().top;
+          }
+        }
+      }
+    }
+
+    if (onScroll) {
+      onScroll(e);
+    }
+  });
+
+  useLayoutEffect(() => {
+    const scrollContainer = scrollContainerClosest
+      ? containerRef.current!.closest<HTMLDivElement>(scrollContainerClosest)!
+      : containerRef.current!;
+    if (!scrollContainer) return undefined;
+
+    const handleNativeScroll = (e: Event) => handleScroll(e as unknown as UIEvent<HTMLDivElement>);
+
+    scrollContainer.addEventListener('scroll', handleNativeScroll);
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleNativeScroll);
+    };
+  }, [handleScroll, scrollContainerClosest]);
 
   return (
     <div
       ref={containerRef}
-      className={`
-        relative overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 
-        scrollbar-track-transparent hover:scrollbar-thumb-gray-400
-        ${maxHeight ? `max-h-[${maxHeight}px]` : 'h-full'}
-        ${className || ''}
-      `}
-      onScroll={handleScroll}
+      className={className}
+      onWheel={onWheel}
+      onKeyDown={onKeyDown}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onClick={onClick}
     >
-      {beforeChildren}
-      <div className={`${noFastList ? '' : 'will-change-transform'}`}>
         {children}
-      </div>
-      
-      {/* Loading Indicators */}
-      <div className="sticky bottom-0 w-full text-center py-4 bg-gradient-to-t from-white/80 to-transparent">
-        {items?.length === 0 && (
-          <p className="text-gray-500">Không có nội dung</p>
-        )}
-      </div>
     </div>
   );
 };

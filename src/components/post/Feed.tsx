@@ -30,9 +30,11 @@ interface FeedProps {
 
 const Feed = ({ posts }: FeedProps) => {
   return (
-    <div className="space-y-4">
-      {posts.map((post) => (
-        <Post key={post.id} post={post} />
+    <div>
+      {posts.map(post => (
+        <div key={post.id} className="post-item">
+          <Post post={post} />
+        </div>
       ))}
     </div>
   );

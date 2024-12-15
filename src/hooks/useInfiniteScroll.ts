@@ -2,16 +2,13 @@ import { useRef } from 'react';
 
 import { LoadMoreDirection } from '../types';
 
-import { areSortedArraysEqual } from '../utils/iteratees';
 import useForceUpdate from './useForceUpdate';
 import useLastCallback from './useLastCallback';
+import { areSortedArraysEqual } from '@/utils/iteratees';
 import usePrevious from './usePrevious';
 
 type GetMore = (args: { direction: LoadMoreDirection }) => void;
-type LoadMoreBackwards = (args: { 
-  offsetId?: string | number; 
-  direction: LoadMoreDirection 
-}) => void;
+type LoadMoreBackwards = (args: { offsetId?: string | number }) => void;
 
 const DEFAULT_LIST_SLICE = 30;
 
@@ -72,7 +69,7 @@ const useInfiniteScroll = <ListId extends string | number>(
 
     if (!listIds) {
       if (loadMoreBackwards) {
-        loadMoreBackwards({ offsetId, direction });
+        loadMoreBackwards({ offsetId });
       }
 
       return;
@@ -92,7 +89,7 @@ const useInfiniteScroll = <ListId extends string | number>(
         requestParamsRef.current = { ...requestParamsRef.current, direction, offsetId };
       }
 
-      loadMoreBackwards({ offsetId, direction });
+      loadMoreBackwards({ offsetId });
     }
   });
 
