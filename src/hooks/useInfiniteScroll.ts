@@ -66,9 +66,10 @@ const useInfiniteScroll = <ListId extends string | number>(
     const offsetId = viewportIds
       ? direction === LoadMoreDirection.Backwards ? viewportIds[viewportIds.length - 1] : viewportIds[0]
       : undefined;
-
+    console.log('offsetId để load more', offsetId);
     if (!listIds) {
       if (loadMoreBackwards) {
+        
         loadMoreBackwards({ offsetId });
       }
 
@@ -102,6 +103,12 @@ function getViewportSlice<ListId extends string | number>(
   listSlice: number,
   offsetId?: ListId,
 ) {
+  console.log('--- getViewportSlice Start ---');
+  console.log('Source IDs:', sourceIds);
+  console.log('Direction:', direction);
+  console.log('List Slice Size:', listSlice);
+  console.log('Offset ID:', offsetId);
+
   const { length } = sourceIds;
   const index = offsetId ? sourceIds.indexOf(offsetId) : 0;
   const isForwards = direction === LoadMoreDirection.Forwards;
@@ -110,8 +117,9 @@ function getViewportSlice<ListId extends string | number>(
   const to = indexForDirection + listSlice - 1;
   const newViewportIds = sourceIds.slice(Math.max(0, from), to + 1);
 
-  let areSomeLocal;
-  let areAllLocal;
+  let areSomeLocal: boolean | undefined;
+  let areAllLocal: boolean | undefined;
+
   switch (direction) {
     case LoadMoreDirection.Forwards:
       areSomeLocal = indexForDirection >= 0;
@@ -122,7 +130,10 @@ function getViewportSlice<ListId extends string | number>(
       areAllLocal = to <= length - 1;
       break;
   }
-
+  console.log('Index:', index);
+  console.log('From:', from, 'To:', to);
+  console.log('New Viewport IDs:', newViewportIds);
+  console.log('--- getViewportSlice End ---\n');
   return {
     newViewportIds,
     areSomeLocal,
@@ -131,5 +142,6 @@ function getViewportSlice<ListId extends string | number>(
     fromOffset: from,
   };
 }
+
 
 export default useInfiniteScroll;

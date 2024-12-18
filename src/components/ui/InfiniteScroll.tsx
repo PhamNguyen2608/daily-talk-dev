@@ -1,14 +1,13 @@
-import type { RefObject, UIEvent } from 'react';
-import type { FC } from 'react';
+import type { FC, RefObject, UIEvent } from 'react';
 import React, {
   useEffect, useLayoutEffect, useMemo, useRef,
 } from 'react';
 
 import { LoadMoreDirection } from '../../types';
 
+import { debounce } from '@/utils/schedulers';
 
 import useLastCallback from '../../hooks/useLastCallback';
-import { debounce } from '@/utils/schedulers';
 
 type OwnProps = {
   ref?: RefObject<HTMLDivElement>;
@@ -79,6 +78,19 @@ const InfiniteScroll: FC<OwnProps> = ({
     currentAnchor?: HTMLDivElement | undefined;
     currentAnchorTop?: number;
   }>({});
+  // Trong InfiniteScroll.tsx
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    const elements = container.querySelectorAll<HTMLDivElement>(itemSelector);
+
+    console.log("Container:", container);
+    console.log("ItemSelector:", itemSelector);
+    console.log("Found elements:", elements);
+
+    stateRef.current.listItemElements = elements;
+  }, []);
 
   const [loadMoreBackwards, loadMoreForwards] = useMemo(() => {
     if (!onLoadMore) {
@@ -116,16 +128,6 @@ const InfiniteScroll: FC<OwnProps> = ({
     }
   }, [items, loadMoreBackwards, preloadBackwards, scrollContainerClosest]);
 
-  useEffect(() => {
-    const container = containerRef.current!;
-    const listItemElements = container.querySelectorAll<HTMLDivElement>(itemSelector);
-    console.log("currentAnchor:", stateRef.current.currentAnchor);
-    console.log("currentAnchorTop:", stateRef.current.currentAnchorTop);
-    console.log("listItemElements:", stateRef.current.listItemElements);
-
-    stateRef.current.listItemElements = listItemElements;
-  }, [items, itemSelector]);
-  
   // Restore `scrollTop` after adding items
   // useLayoutEffect(() => {
   //   const scrollContainer = scrollContainerClosest
@@ -174,16 +176,20 @@ const InfiniteScroll: FC<OwnProps> = ({
   // ]);
 
   const handleScroll = useLastCallback((e: UIEvent<HTMLDivElement>) => {
-
+    console.log("1. Scroll event triggered");
     if (loadMoreForwards && loadMoreBackwards) {
       const {
         isScrollTopJustUpdated, currentAnchor, currentAnchorTop,
       } = stateRef.current;
       const listItemElements = stateRef.current.listItemElements!;
-      console.log('Scroll event triggered');
-
-      console.log('listItemElements', listItemElements)
+      console.log("2. Current state:", { // Bước 2: Kiểm tra state hiện tại
+        isScrollTopJustUpdated,
+        hasCurrentAnchor: !!currentAnchor,
+        currentAnchorTop,
+        numberOfListItems: listItemElements?.length
+      });
       if (isScrollTopJustUpdated) {
+        console.log("3. Scroll was just updated, skipping...");
         stateRef.current.isScrollTopJustUpdated = false;
         return;
       }
@@ -193,18 +199,31 @@ const InfiniteScroll: FC<OwnProps> = ({
         ? containerRef.current!.closest<HTMLDivElement>(scrollContainerClosest)!
         : containerRef.current!;
       const { scrollTop, scrollHeight, offsetHeight } = scrollContainer;
+      console.log("4. Scroll metrics:", { // Bước 4: Thông số scroll
+        scrollTop,        // Vị trí scroll hiện tại
+        scrollHeight,     // Tổng chiều cao có thể scroll
+        offsetHeight,     // Chiều cao container
+        viewableArea: scrollTop + offsetHeight // Vùng đang hiển thị
+      });
       const top = listLength ? listItemElements[0].offsetTop : 0;
       const isNearTop = scrollTop <= top + sensitiveArea;
       const bottom = listLength
         ? listItemElements[listLength - 1].offsetTop + listItemElements[listLength - 1].offsetHeight
         : scrollHeight;
       const isNearBottom = bottom - (scrollTop + offsetHeight) <= sensitiveArea;
+      console.log("5. Position check:", { // Bước 5: Kiểm tra vị trí
+        isNearTop,
+        isNearBottom,
+        sensitiveArea,
+        topPosition: top,
+        bottomPosition: bottom
+      });
       let isUpdated = false;
 
       if (isNearTop) {
         const nextAnchor = listItemElements[0];
-        console.log('nextAnchor', nextAnchor)
         if (nextAnchor) {
+          console.log("6. Near bottom - checking for load more");
           const nextAnchorTop = nextAnchor.getBoundingClientRect().top;
           const newAnchorTop = currentAnchor?.offsetParent && currentAnchor !== nextAnchor
             ? currentAnchor.getBoundingClientRect().top
@@ -212,34 +231,53 @@ const InfiniteScroll: FC<OwnProps> = ({
           const isMovingUp = (
             currentAnchor && currentAnchorTop !== undefined && newAnchorTop > currentAnchorTop
           );
-
           if (isMovingUp) {
             stateRef.current.currentAnchor = nextAnchor;
             stateRef.current.currentAnchorTop = nextAnchorTop;
             isUpdated = true;
-            console.log('isMovingUp');
+            console.log("Cuộn lên - Loading forwards");
             loadMoreForwards();
           }
         }
       }
 
       if (isNearBottom) {
+        console.log("7. Near bottom - checking for load more");
         const nextAnchor = listItemElements[listLength - 1];
         if (nextAnchor) {
           const nextAnchorTop = nextAnchor.getBoundingClientRect().top;
           const newAnchorTop = currentAnchor?.offsetParent && currentAnchor !== nextAnchor
             ? currentAnchor.getBoundingClientRect().top
             : nextAnchorTop;
+          
           const isMovingDown = (
-            currentAnchor && currentAnchorTop !== undefined && newAnchorTop < currentAnchorTop
+            currentAnchor && 
+            currentAnchorTop !== undefined && 
+            newAnchorTop < currentAnchorTop
           );
 
+          console.log('Loading check:', {
+            currentData: {
+              totalItems: listItemElements.length,
+              lastItemIndex: listLength - 1,
+              lastItem: nextAnchor.textContent // Nội dung item cuối cùng
+            }
+          });
           if (isMovingDown) {
             stateRef.current.currentAnchor = nextAnchor;
             stateRef.current.currentAnchorTop = nextAnchorTop;
-            isUpdated = true;
-            console.log('isMovingDown');
+            console.log('isMovingDown:', isMovingDown);
+            console.log('Before loading more:', {
+              viewportIds: items,
+              lastItemId: items?.[items.length - 1]
+            });
+
             loadMoreBackwards();
+            
+            console.log('After loading more:', {
+              newViewportIds: stateRef.current.listItemElements,
+              newLastItemId: stateRef.current.listItemElements?.[stateRef.current.listItemElements.length - 1]
+            });
           }
         }
       }
@@ -288,7 +326,7 @@ const InfiniteScroll: FC<OwnProps> = ({
       onDragLeave={onDragLeave}
       onClick={onClick}
     >
-        {children}
+      {children}
     </div>
   );
 };
