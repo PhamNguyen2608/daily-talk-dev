@@ -5,6 +5,8 @@ export default {
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/stories/**/*.{js,ts,jsx,tsx,mdx}',
+    "./.storybook/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {
@@ -32,6 +34,15 @@ export default {
           bg: '#2B2B2B',
           hover: '#333333',
           border: '#FF5722',
+        },
+      },
+      animation: {
+        'spin': 'spin 1s linear infinite',
+      },
+      keyframes: {
+        spin: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
         },
       },
       // Font Family

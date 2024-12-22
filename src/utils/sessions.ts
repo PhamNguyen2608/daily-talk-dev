@@ -1,4 +1,4 @@
-import type { AuthState } from '../store/types';
+import type { AuthState } from '../global/types';
 import { DEBUG, SESSION_USER_KEY } from '../config';
 
 // Kiểm tra xem người dùng đã đăng nhập hay chưa (kiểm tra nếu session có tồn tại)

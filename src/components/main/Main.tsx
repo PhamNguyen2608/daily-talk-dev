@@ -6,10 +6,15 @@ import LeftColumn from "../left/LeftColumn";
 import Feed from "../post/Feed";
 import useInfiniteScroll from '@/hooks/useInfiniteScroll';
 import InfiniteScroll from "../ui/InfiniteScroll";
-
+import { useRouter } from 'next/navigation';
+import Button from "@/components/ui/Button";
+import Loading from "@/components/ui/Loading";
+import HexagonImage from "../ui/Test";
+import DoctorCard from "../ui/DoctorCard";
 const Main: React.FC = () => {
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
   // Di chuyển Lorem object lên trước khi sử dụng
   const Lorem = {
     words: [
@@ -30,7 +35,13 @@ const Main: React.FC = () => {
       ).join(' ');
     }
   };
-
+  const handlePostClick = () => {
+    setIsLoading(true);
+    // setTimeout(() => {
+    //   setIsLoading(false);
+    //   router.push(`/post}`);
+    // }, 1000);
+  };
   // Sau đó mới khai báo posts state với generateInitialPosts
   const [posts] = useState(() => generateInitialPosts(100));
 
@@ -108,7 +119,7 @@ const Main: React.FC = () => {
   // Sử dụng useInfiniteScroll để cắt lát mảng posts thành từng viewport 30 phần tử
   const [viewportIds, getMore] = useInfiniteScroll(
     undefined, // Không cần tải thêm từ API
-    posts.map(post => post.id), // Chuyển danh sách ID của 100 ph��n tử
+    posts.map(post => post.id), // Chuyển danh sách ID của 100 phần tử
     undefined,
     30 // Số phần tử mỗi lát cắt
   );
@@ -124,6 +135,18 @@ const Main: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <div className="flex justify-center items-center h-screen bg-red-500 relative">
+        {isLoading && (
+          <Loading
+            color="blue"
+            size="md"
+            backgroundColor="dark"
+            className="absolute inset-0 bg-black bg-opacity-50"
+          />
+        )}
+        
+      </div>
+      <DoctorCard />
       <MainNavBar onMobileMenuToggle={toggleSidebar} />
       <LeftColumn isOpen={isSidebarOpen} onClose={toggleSidebar}>
         <div className="scroll-container">
@@ -144,6 +167,7 @@ const Main: React.FC = () => {
           </InfiniteScroll>
         </div>
       </LeftColumn>
+      <Button color="primary" size="large" onClick={() => handlePostClick()}>Click me</Button>
     </div>
   );
 };

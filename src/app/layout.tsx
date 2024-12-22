@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { StoreProvider } from '@/global/providers/StoreProvider'
 
 const geistSans = localFont({
   src: "/fonts/GeistVF.woff",
@@ -43,12 +44,13 @@ export default function RootLayout({
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        {/* Thêm metadata OpenGraph */}
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={bodyClasses}>
-        {children}
-        <div id="portals"></div>
+        <StoreProvider>
+          {children}
+          <div id="portals"></div>
+        </StoreProvider>
         <noscript>
           <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white text-center">
             <video
@@ -66,7 +68,6 @@ export default function RootLayout({
             </p>
           </div>
         </noscript>
-
       </body>
     </html>
   );
