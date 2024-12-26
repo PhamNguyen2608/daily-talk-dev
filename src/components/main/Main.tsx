@@ -9,8 +9,6 @@ import InfiniteScroll from "../ui/InfiniteScroll";
 import { useRouter } from 'next/navigation';
 import Button from "@/components/ui/Button";
 import Loading from "@/components/ui/Loading";
-import HexagonImage from "../ui/Test";
-import DoctorCard from "../ui/DoctorCard";
 const Main: React.FC = () => {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -135,18 +133,6 @@ const Main: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="flex justify-center items-center h-screen bg-red-500 relative">
-        {isLoading && (
-          <Loading
-            color="blue"
-            size="md"
-            backgroundColor="dark"
-            className="absolute inset-0 bg-black bg-opacity-50"
-          />
-        )}
-        
-      </div>
-      <DoctorCard />
       <MainNavBar onMobileMenuToggle={toggleSidebar} />
       <LeftColumn isOpen={isSidebarOpen} onClose={toggleSidebar}>
         <div className="scroll-container">

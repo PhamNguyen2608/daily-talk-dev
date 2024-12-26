@@ -174,6 +174,23 @@ export default function PostCreator() {
                     </div>
                   )}
                 </div>
+
+                <div className="flex justify-end pt-4 border-t border-slate-200">
+                  <Button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => {
+                      // TODO: Implement post submission logic
+                      console.log({
+                        squad: selectedSquad,
+                        thumbnail: thumbnailUrl,
+                        title,
+                        content
+                      })
+                    }}
+                  >
+                    Publish Post
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </TabsContent>
